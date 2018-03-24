@@ -57,3 +57,8 @@ typings/
 # dotenv environment variables file
 .env
 
+# Private info
+/private
+
+# Babel compiled files
+/dist
