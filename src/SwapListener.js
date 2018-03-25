@@ -42,6 +42,8 @@ async function handleSwaps(request,response,serve) {
           buyerId
         }
         let result = await firebase.database().ref('/pendingSwaps').push(match);
+
+        firebase.database().ref('/products/' + productId+ '/swaps/' + key).remove();
       }
     });
     if(!foundSwap){
