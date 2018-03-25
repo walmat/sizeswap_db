@@ -22,32 +22,40 @@ async function handleSwaps(request,response,serve) {
   let productId = swapQuery && swapQuery.productID ? swapQuery.productID : undefined;
  // console.log(swapQuery);
   //console.log(productId);
+  let foundSwap = false;
   if(swapQuery && productId) {
-    let swaps = await firebase.database().ref('/products/' + productId+ '/swaps/').once("value"); // .orderByChild('in');
-    console.log(typeof swaps);
+    let swaps = await firebase.database().ref('/products/' + productId+ '/swaps/').orderByChild('time').once("value"); // .orderByChild('in');
     let swapReturn = swaps.exportVal();
-    let foundSwap = false;
-    Object.keys(swapReturn).forEach(async(key) =>{
-      let current = swapReturn[key];
-      if(current.in === swapQuery.out && current.out === swapQuery.in){
-        foundSwap = true;
-        let requesterSize = current.in;
-        let buyerSize = swapQuery.in;
-        let requesterId = current.user;
-        let buyerId = swapQuery.user;
-        let match = {
-          requesterSize,
-          buyerSize,
-          requesterId,
-          buyerId
+    if(swapReturn) {
+      Object.keys(swapReturn).forEach(async(key) =>{
+        let current = swapReturn[key];
+        if(!foundSwap && current.in === swapQuery.out && current.out === swapQuery.in){
+          foundSwap = true;
+          let requesterSize = current.in;
+          let buyerSize = swapQuery.in;
+          let requesterId = current.user;
+          let buyerId = swapQuery.user;
+          let match = {
+            requesterSize,
+            buyerSize,
+            requesterId,
+            buyerId,
+            time: Date.now()
+          }
+          let result = await firebase.database().ref('/pendingSwaps').push(match);
+  
+          firebase.database().ref('/products/' + productId + '/swaps/' + key).remove();
         }
-        let result = await firebase.database().ref('/pendingSwaps').push(match);
-
-        firebase.database().ref('/products/' + productId+ '/swaps/' + key).remove();
-      }
-    });
+      });
+    }
     if(!foundSwap){
       //Add new swap request to DB
+      firebase.database().ref('/products/' + productId + '/swaps/').push({
+        user: swapQuery.user,
+        in: swapQuery.in,
+        out: swapQuery.out,
+        time: Date.now()
+      });
     }
     
     // console.log(swaps.getValue());
