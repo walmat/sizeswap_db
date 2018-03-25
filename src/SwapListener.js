@@ -1,7 +1,9 @@
 "use strict";
 import firebase from 'firebase-admin';
 import serviceAccount from '../private/serviceAccountKey.json';
+import emailAccountInfo from '../private/emailAccountInfo.json';
 import server from 'node-http-server';
+import nodemailer from 'nodemailer';
 
 firebase.initializeApp({
     credential: firebase.credential.cert(serviceAccount),
@@ -19,7 +21,7 @@ server.deploy(config);
 async function handleSwaps(request,response,serve) {
   console.log('hit');
   let swapQuery = request.body ? JSON.parse(request.body) : undefined;
-  let productId = swapQuery && swapQuery.productID ? swapQuery.productID : undefined;
+  let productId = swapQuery && swapQuery.productID ? swapQuery.productID : undefined;2
  // console.log(swapQuery);
   //console.log(productId);
   let foundSwap = false;
@@ -45,6 +47,7 @@ async function handleSwaps(request,response,serve) {
           let result = await firebase.database().ref('/pendingSwaps').push(match);
   
           firebase.database().ref('/products/' + productId + '/swaps/' + key).remove();
+          sendEmail(current);
         }
       });
     }
@@ -57,23 +60,60 @@ async function handleSwaps(request,response,serve) {
         time: Date.now()
       });
     }
-    
-    // console.log(swaps.getValue());
-    
-    
-
   }
-  return JSON.stringify({
+  serve(
+    request,
+    response,
+    JSON.stringify({
     statusCode: 200
-  });
+  }));
 }
 
+async function sendEmail(current) {
+  let transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: "smtp.gmail.com",
+      auth: {
+        type: 'OAuth2',
+        user: emailAccountInfo.email,
+        clientId: emailAccountInfo.clientId,
+        clientSecret: emailAccountInfo.clientSecret,
+        refreshToken: emailAccountInfo.refreshToken
+      }
+  });
 
-// firebase.database().ref().child('/products/:key/swaps').on('child_added',function(snapshot){
-//     console.log('child added');
-// });
-// let ref = new Firebase('https://size-swap.firebaseio.com/products/');
-// ref.on('child_changed',function(childsnapshot,prevchildname){
-//   console.log('Change in database');
-//   console.log(childsnapshot);
-// }) ;
+    let userTuple = await firebase.database().ref('/user/' + current.user).once("value"); // .orderByChild('in');
+    let userReturn = userTuple.exportVal();
+    let userProfile = {};
+    if(userReturn) {
+      userProfile = {
+        emailTo: userReturn.email,
+        userFullName: userReturn.name
+      }
+    }
+
+  // setup email data with unicode symbols
+  let text = `Hello ` + userProfile.userFullName + '\n \n We have found someone who is looking to swap with you! Head to the orders tab on your profile to confirm you are still willing to trade. Cancelling the trade will result in a fee.';
+  let mailOptions = {
+      from: '"Size Swap Customer Service 👻" emailAccountInfo.email', // sender address
+      to: userProfile.emailTo,
+      subject: 'We Found A Swap For You 💯', // Subject line
+
+      html: `<b>${text}</b>` // html body
+  };
+
+  console.log('HELP');
+
+  // send mail with defined transport object
+  transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+          return console.log(error);
+      }
+      console.log('Message sent: %s', info.messageId);
+      // Preview only available when sending through an Ethereal account
+      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+
+      // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+      // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
+  });
+}
