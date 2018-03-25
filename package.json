@@ -3,7 +3,7 @@
         "eslint": "eslint src",
         "eslintInit": "eslint --init",
         "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log --copy-files",
-        "start": "npm run build && node dist/src/SwapListener.js"
+        "start": "npm run build && node dist/src/index.js"
     },
     "dependencies": {
         "babel-runtime": "^6.26.0",

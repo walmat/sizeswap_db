@@ -43,7 +43,11 @@ async function handleSwaps(request,response,serve) {
             buyerSize,
             requesterId,
             buyerId,
-            time: Date.now()
+            time: Date.now(),
+            user1Name: swapQuery.user.name,
+            user1Address: swapQuery.user.address,
+            user2Name: current.userName,
+            user2Address: current.userAddress
           }
           let result = await firebase.database().ref('/pendingSwaps').push(match);
   
@@ -56,7 +60,9 @@ async function handleSwaps(request,response,serve) {
       //Add new swap request to DB
       firebase.database().ref('/products/' + productId + '/swaps/').push({
         productTitle: swapQuery.productTitle,
-        user: swapQuery.user,
+        user: swapQuery.user.ID,
+        userName: swapQuery.user.name,
+        userAddress: swapQuery.user.address,
         in: swapQuery.in,
         out: swapQuery.out,
         time: Date.now()
