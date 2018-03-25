@@ -38,6 +38,7 @@ async function handleSwaps(request,response,serve) {
           let requesterId = current.user;
           let buyerId = swapQuery.user;
           let match = {
+            productTitle: swapQuery.productTitle,
             requesterSize,
             buyerSize,
             requesterId,
@@ -54,6 +55,7 @@ async function handleSwaps(request,response,serve) {
     if(!foundSwap){
       //Add new swap request to DB
       firebase.database().ref('/products/' + productId + '/swaps/').push({
+        productTitle: swapQuery.productTitle,
         user: swapQuery.user,
         in: swapQuery.in,
         out: swapQuery.out,
