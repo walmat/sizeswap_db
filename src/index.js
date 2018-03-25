@@ -42,7 +42,7 @@ async function handleSwaps(request,response,serve) {
             requesterSize,
             buyerSize,
             requesterId,
-            buyerId,
+            buyerId: swapQuery.user.ID,
             time: Date.now(),
             user1Name: swapQuery.user.name,
             user1Address: swapQuery.user.address,
